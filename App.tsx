@@ -4,7 +4,7 @@ import { BniFormData, INITIAL_FORM_DATA } from './types';
 import { RecordForm } from './components/RecordForm';
 import { analyzeAudio } from './services/geminiService';
 import { exportToWord } from './services/exportToWord';
-import { processAudio } from './services/audioService';
+import { processAudio, shouldCompressAudio } from './services/audioService';
 import { CONFIG } from './config';
 
 const UploadPage = ({ fileInputRef, onFileChange }: {
@@ -108,10 +108,54 @@ export default function App() {
 
     try {
       console.log('開始處理音頻文件:', file.name);
-      const result = await analyzeAudio(apiKey, file, (message) => {
+      console.log('原始文件大小:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+
+      let processedFile: File = file;
+
+      // 檢查是否需要壓縮
+      if (shouldCompressAudio(file)) {
+        console.log('文件超過 5MB,開始壓縮...');
+        setProcessingMessage(`正在壓縮音頻 (${(file.size / 1024 / 1024).toFixed(2)} MB)...`);
+
+        try {
+          // 壓縮音頻到 16kHz
+          const { blob, duration } = await processAudio(file, 16000);
+
+          // 將 Blob 轉換為 File
+          processedFile = new File(
+            [blob],
+            file.name.replace(/\.[^/.]+$/, '') + '_compressed.mp3',
+            { type: 'audio/mp3' }
+          );
+
+          const compressionRatio = ((1 - blob.size / file.size) * 100).toFixed(1);
+          console.log('壓縮完成!');
+          console.log('壓縮後大小:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
+          console.log('壓縮比例:', compressionRatio + '%');
+          console.log('音頻時長:', duration.toFixed(1), '秒');
+
+          setProcessingMessage(
+            `壓縮完成 (${(file.size / 1024 / 1024).toFixed(1)}MB → ${(blob.size / 1024 / 1024).toFixed(1)}MB, 節省 ${compressionRatio}%)`
+          );
+
+          // 等待 1 秒讓用戶看到壓縮結果
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (compressionError: any) {
+          console.error('壓縮失敗,使用原始文件:', compressionError);
+          setProcessingMessage('壓縮失敗,使用原始文件繼續分析...');
+          // 如果壓縮失敗,繼續使用原始文件
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } else {
+        console.log('文件小於 5MB,跳過壓縮');
+      }
+
+      // 開始 AI 分析
+      const result = await analyzeAudio(apiKey, processedFile, (message) => {
         console.log('進度更新:', message);
         setProcessingMessage(message);
       });
+
       setFormData(prev => ({ ...prev, ...result.formData }));
       setSummary(result.summary);
       setTranscript(result.transcript);

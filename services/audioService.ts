@@ -12,17 +12,17 @@ function bufferToMp3(buffer: AudioBuffer): Blob {
   const channels = 1; // Force mono for compression efficiency
   const sampleRate = buffer.sampleRate; // 16000 or 24000
   const kbps = 64; // 64kbps is generally sufficient for 16-24kHz speech
-  
+
   // Access lamejs from the global window object
   const lamejs = window.lamejs;
-  
+
   if (!lamejs || !lamejs.Mp3Encoder) {
     throw new Error("MP3 Encoder library (lamejs) failed to load. Please refresh the page and try again.");
   }
 
   const Mp3EncoderConstructor = lamejs.Mp3Encoder;
   const mp3encoder = new Mp3EncoderConstructor(channels, sampleRate, kbps);
-  
+
   // Flatten to mono if needed
   let data: Float32Array;
   if (buffer.numberOfChannels === 1) {
@@ -48,8 +48,8 @@ function bufferToMp3(buffer: AudioBuffer): Blob {
   // Encode in chunks
   const mp3Data: Int8Array[] = [];
   // 1152 samples per frame for MP3
-  const sampleBlockSize = 1152; 
-  
+  const sampleBlockSize = 1152;
+
   for (let i = 0; i < samples.length; i += sampleBlockSize) {
     const chunk = samples.subarray(i, i + sampleBlockSize);
     const mp3buf = mp3encoder.encodeBuffer(chunk);
@@ -57,36 +57,36 @@ function bufferToMp3(buffer: AudioBuffer): Blob {
       mp3Data.push(mp3buf);
     }
   }
-  
+
   // Finish encoding
   const mp3buf = mp3encoder.flush();
   if (mp3buf.length > 0) {
     mp3Data.push(mp3buf);
   }
 
-  return new Blob(mp3Data, { type: 'audio/mp3' });
+  return new Blob(mp3Data as any, { type: 'audio/mp3' });
 }
 
 export const processAudio = async (
-  file: File, 
+  file: File,
   targetSampleRate: number
 ): Promise<{ blob: Blob, duration: number }> => {
   try {
     // 1. Read File
     const arrayBuffer = await file.arrayBuffer();
-    
+
     // 2. Decode Audio
     const audioContext = new AudioContext();
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    
+
     // 3. Resample using OfflineAudioContext
     // We force mono (1 channel) for the output to save space
     // FIX: Length must be an integer or it throws TypeError
     const length = Math.ceil(audioBuffer.duration * targetSampleRate);
-    
+
     const offlineCtx = new OfflineAudioContext(
-      1, 
-      length, 
+      1,
+      length,
       targetSampleRate
     );
 
@@ -96,10 +96,10 @@ export const processAudio = async (
     source.start();
 
     const resampledBuffer = await offlineCtx.startRendering();
-    
+
     // 4. Encode to MP3
     const mp3Blob = bufferToMp3(resampledBuffer);
-    
+
     // Close context to free resources
     await audioContext.close();
 
@@ -131,3 +131,12 @@ export const blobToBase64 = (blob: Blob): Promise<string> => {
   });
 };
 
+/**
+ * 判斷是否需要壓縮音頻
+ * @param file 音頻文件
+ * @returns true 如果文件大小超過 5MB
+ */
+export const shouldCompressAudio = (file: File): boolean => {
+  const FILE_SIZE_THRESHOLD = 5 * 1024 * 1024; // 5MB
+  return file.size > FILE_SIZE_THRESHOLD;
+};
