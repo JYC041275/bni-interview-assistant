@@ -90,6 +90,7 @@ export default function App() {
   const [transcript, setTranscript] = useState('');
   const [activeTab, setActiveTab] = useState<'form' | 'transcript'>('form');
   const [processingMessage, setProcessingMessage] = useState('AI 正在聆聽並分析會議內容...');
+  const [processingProgress, setProcessingProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,22 +105,31 @@ export default function App() {
     }
 
     setStep('processing');
+    setProcessingProgress(0);
     setProcessingMessage('正在準備分析...');
 
     try {
       console.log('開始處理音頻文件:', file.name);
       console.log('原始文件大小:', (file.size / 1024 / 1024).toFixed(2), 'MB');
 
+      // 階段 1: 準備 (0-10%)
+      setProcessingProgress(5);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setProcessingProgress(10);
+
       let processedFile: File = file;
 
-      // 檢查是否需要壓縮
+      // 階段 2: 壓縮 (10-30%)
       if (shouldCompressAudio(file)) {
         console.log('文件超過 5MB,開始壓縮...');
+        setProcessingProgress(15);
         setProcessingMessage(`正在壓縮音頻 (${(file.size / 1024 / 1024).toFixed(2)} MB)...`);
 
         try {
           // 壓縮音頻到 16kHz
           const { blob, duration } = await processAudio(file, 16000);
+
+          setProcessingProgress(25);
 
           // 將 Blob 轉換為 File
           processedFile = new File(
@@ -134,6 +144,7 @@ export default function App() {
           console.log('壓縮比例:', compressionRatio + '%');
           console.log('音頻時長:', duration.toFixed(1), '秒');
 
+          setProcessingProgress(30);
           setProcessingMessage(
             `壓縮完成 (${(file.size / 1024 / 1024).toFixed(1)}MB → ${(blob.size / 1024 / 1024).toFixed(1)}MB, 節省 ${compressionRatio}%)`
           );
@@ -142,28 +153,57 @@ export default function App() {
           await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (compressionError: any) {
           console.error('壓縮失敗,使用原始文件:', compressionError);
+          setProcessingProgress(30);
           setProcessingMessage('壓縮失敗,使用原始文件繼續分析...');
           // 如果壓縮失敗,繼續使用原始文件
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } else {
         console.log('文件小於 5MB,跳過壓縮');
+        setProcessingProgress(30);
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      // 開始 AI 分析
+      // 階段 3: AI 分析 (30-90%)
+      setProcessingProgress(35);
       const result = await analyzeAudio(apiKey, processedFile, (message) => {
         console.log('進度更新:', message);
         setProcessingMessage(message);
+
+        // 根據訊息更新進度
+        if (message.includes('初始化')) {
+          setProcessingProgress(40);
+        } else if (message.includes('處理音頻')) {
+          setProcessingProgress(45);
+        } else if (message.includes('發送請求')) {
+          setProcessingProgress(50);
+        } else if (message.includes('分析')) {
+          setProcessingProgress(60);
+        } else if (message.includes('解析')) {
+          setProcessingProgress(85);
+        }
       });
 
+      // 階段 4: 完成 (90-100%)
+      setProcessingProgress(90);
+      setProcessingMessage('正在整理結果...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      setProcessingProgress(95);
       setFormData(prev => ({ ...prev, ...result.formData }));
       setSummary(result.summary);
       setTranscript(result.transcript);
+
+      setProcessingProgress(100);
+      setProcessingMessage('分析完成!');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       setStep('workspace');
     } catch (error: any) {
       console.error('處理錯誤:', error);
       alert(`處理音檔時發生錯誤:\n\n${error.message || '請重試'}\n\n請檢查:\n1. API Key 是否正確\n2. 網路連線是否正常\n3. 音頻文件是否完整\n\n詳細錯誤請查看瀏覽器控制台 (F12)`);
       setStep('upload');
+      setProcessingProgress(0);
     }
   };
 
@@ -186,11 +226,62 @@ export default function App() {
 
   if (step === 'processing') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="w-16 h-16 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-6"></div>
-        <h2 className="text-2xl font-bold text-gray-800 animate-pulse">{processingMessage}</h2>
-        <p className="text-gray-500 mt-2">這可能需要幾分鐘，請勿關閉視窗。</p>
-        <p className="text-xs text-gray-400 mt-4">如果超過 5 分鐘沒有回應，請檢查網路連線或重試</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-2xl w-full">
+          {/* 進度百分比 */}
+          <div className="text-center mb-6">
+            <div className="text-6xl font-bold text-red-600 mb-2">
+              {processingProgress}%
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">
+              {processingMessage}
+            </h2>
+          </div>
+
+          {/* 進度條 */}
+          <div className="relative w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-6">
+            <div
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-red-500 to-red-600 transition-all duration-500 ease-out"
+              style={{ width: `${processingProgress}%` }}
+            >
+              <div className="absolute inset-0 bg-white opacity-20 animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* 階段指示器 */}
+          <div className="flex justify-between text-xs text-gray-500 mb-8">
+            <div className={`flex flex-col items-center ${processingProgress >= 10 ? 'text-red-600 font-semibold' : ''}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${processingProgress >= 10 ? 'bg-red-600 text-white' : 'bg-gray-200'}`}>
+                {processingProgress >= 10 ? '✓' : '1'}
+              </div>
+              <span>準備</span>
+            </div>
+            <div className={`flex flex-col items-center ${processingProgress >= 30 ? 'text-red-600 font-semibold' : ''}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${processingProgress >= 30 ? 'bg-red-600 text-white' : 'bg-gray-200'}`}>
+                {processingProgress >= 30 ? '✓' : '2'}
+              </div>
+              <span>壓縮</span>
+            </div>
+            <div className={`flex flex-col items-center ${processingProgress >= 50 ? 'text-red-600 font-semibold' : ''}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${processingProgress >= 50 ? 'bg-red-600 text-white' : 'bg-gray-200'}`}>
+                {processingProgress >= 50 ? '✓' : '3'}
+              </div>
+              <span>分析</span>
+            </div>
+            <div className={`flex flex-col items-center ${processingProgress >= 90 ? 'text-red-600 font-semibold' : ''}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${processingProgress >= 90 ? 'bg-red-600 text-white' : 'bg-gray-200'}`}>
+                {processingProgress >= 90 ? '✓' : '4'}
+              </div>
+              <span>完成</span>
+            </div>
+          </div>
+
+          {/* 提示訊息 */}
+          <div className="text-center space-y-2">
+            <p className="text-gray-600">這可能需要幾分鐘,請勿關閉視窗。</p>
+            <p className="text-xs text-gray-400">如果超過 5 分鐘沒有回應,請檢查網路連線或重試</p>
+          </div>
+        </div>
       </div>
     );
   }
