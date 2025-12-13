@@ -1,5 +1,0 @@
-{
-  "name": "音頻轉檔壓縮器",
-  "description": "A professional-grade audio compressor and downsampler. Convert audio files to compact MP3 formats at 16kHz or 24kHz, optimized for speech recognition APIs and bandwidth-constrained environments.",
-  "requestFramePermissions": []
-}
