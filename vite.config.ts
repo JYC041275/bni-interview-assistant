@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
-    base: '/',  // 使用自訂網域 bni-new.stories.com.tw
+    base: '/bni-interview-assistant/',  // GitHub Pages 需要倉庫名稱作為 base
     server: {
       port: 3000,
       host: '0.0.0.0',
