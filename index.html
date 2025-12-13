@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BNI 訪談助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load lamejs for audio compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+      body {
+        font-family: 'Noto Sans TC', sans-serif;
+      }
+      @media print {
+        @page {
+          size: A4;
+          margin: 15mm;
+        }
+        /* Reset background colors for print to save ink and look cleaner */
+        body {
+          background-color: white !important;
+          -webkit-print-color-adjust: exact;
+        }
+        
+        /* Ensure input borders are visible when printing */
+        input, textarea {
+          border: none !important;
+          border-bottom: 1px solid #000 !important;
+          background: transparent !important;
+          resize: none !important;
+        }
+
+        /* Hide scrollbars */
+        ::-webkit-scrollbar {
+          display: none;
+        }
+      }
+    </style>
+
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.560.0",
+    "react/": "https://esm.sh/react@^19.2.1/",
+    "react": "https://esm.sh/react@^19.2.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.1/"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/assets/index.js"></script>
+</head>
+  <body class="bg-gray-100 h-screen overflow-hidden print:h-auto print:overflow-visible">
+    <div id="root" class="h-full print:h-auto"></div>
+</body>
+</html>
