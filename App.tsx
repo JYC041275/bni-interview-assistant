@@ -89,13 +89,14 @@ export default function App() {
   const [summary, setSummary] = useState('');
   const [transcript, setTranscript] = useState('');
   const [activeTab, setActiveTab] = useState<'form' | 'transcript'>('form');
+  const [processingMessage, setProcessingMessage] = useState('AI 正在聆聽並分析會議內容...');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // 優先使用配置中的 API Key，如果沒有則使用 localStorage 中的
+    // 優先使用配置中的 API Key,如果沒有則使用 localStorage 中的
     const apiKey = CONFIG.API_KEY || localStorage.getItem('GEMINI_API_KEY');
     if (!apiKey) {
       alert("請先輸入 Gemini API Key");
@@ -103,16 +104,21 @@ export default function App() {
     }
 
     setStep('processing');
-    
+    setProcessingMessage('正在準備分析...');
+
     try {
-      const result = await analyzeAudio(apiKey, file);
+      console.log('開始處理音頻文件:', file.name);
+      const result = await analyzeAudio(apiKey, file, (message) => {
+        console.log('進度更新:', message);
+        setProcessingMessage(message);
+      });
       setFormData(prev => ({ ...prev, ...result.formData }));
       setSummary(result.summary);
       setTranscript(result.transcript);
       setStep('workspace');
     } catch (error: any) {
-      console.error(error);
-      alert(`處理音檔時發生錯誤: ${error.message || '請重試'}`);
+      console.error('處理錯誤:', error);
+      alert(`處理音檔時發生錯誤:\n\n${error.message || '請重試'}\n\n請檢查:\n1. API Key 是否正確\n2. 網路連線是否正常\n3. 音頻文件是否完整\n\n詳細錯誤請查看瀏覽器控制台 (F12)`);
       setStep('upload');
     }
   };
@@ -138,8 +144,9 @@ export default function App() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <div className="w-16 h-16 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-6"></div>
-        <h2 className="text-2xl font-bold text-gray-800 animate-pulse">AI 正在聆聽並分析會議內容...</h2>
+        <h2 className="text-2xl font-bold text-gray-800 animate-pulse">{processingMessage}</h2>
         <p className="text-gray-500 mt-2">這可能需要幾分鐘，請勿關閉視窗。</p>
+        <p className="text-xs text-gray-400 mt-4">如果超過 5 分鐘沒有回應，請檢查網路連線或重試</p>
       </div>
     );
   }
