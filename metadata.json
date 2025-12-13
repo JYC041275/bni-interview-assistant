@@ -1,0 +1,5 @@
+{
+  "name": "BNI Interview Assistant",
+  "description": "AI-powered BNI membership interview transcript and record generator with PDF export.",
+  "requestFramePermissions": []
+}
