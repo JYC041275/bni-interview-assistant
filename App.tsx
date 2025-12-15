@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { Upload, FileAudio, Layout, FileText, Image as ImageIcon } from 'lucide-react';
-import { BniFormData, INITIAL_FORM_DATA } from './types';
+import { BniFormData, INITIAL_FORM_DATA, TokenUsage } from './types';
 import { RecordForm } from './components/RecordForm';
 import { analyzeAudio } from './services/geminiService';
 import { exportToWord } from './services/exportToWord';
 import { processAudio, shouldCompressAudio } from './services/audioService';
 import { CONFIG } from './config';
+import { TokenUsageDisplay } from './components/TokenUsageDisplay';
 
 const UploadPage = ({ fileInputRef, onFileChange }: {
   fileInputRef: React.RefObject<HTMLInputElement>,
@@ -88,6 +89,8 @@ export default function App() {
   const [formData, setFormData] = useState<BniFormData>(INITIAL_FORM_DATA);
   const [summary, setSummary] = useState('');
   const [transcript, setTranscript] = useState('');
+  const [currentUsage, setCurrentUsage] = useState<TokenUsage | undefined>(undefined);
+  const [currentModelName, setCurrentModelName] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'form' | 'transcript'>('form');
   const [processingMessage, setProcessingMessage] = useState('AI 正在聆聽並分析會議內容...');
   const [processingProgress, setProcessingProgress] = useState(0);
@@ -97,16 +100,36 @@ export default function App() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // 優先使用配置中的 API Key,如果沒有則使用 localStorage 中的
+    // 檢查文件類型
+    const validTypes = ['audio/mpeg', 'audio/wav', 'audio/x-m4a', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/webm'];
+    // 某些瀏覽器可能無法正確識別 m4a，所以也允許空類型或 application/octet-stream，並通過副檔名檢查
+    const isValidType = validTypes.includes(file.type) ||
+      file.name.toLowerCase().endsWith('.m4a') ||
+      file.name.toLowerCase().endsWith('.mp3') ||
+      file.name.toLowerCase().endsWith('.wav');
+
+    if (!isValidType) {
+      alert('不支援的文件格式。請上傳 MP3, WAV 或 M4A 文件。');
+      return;
+    }
+
+    // 檢查文件大小 (初始限制放寬到 60MB，因為會進行壓縮)
+    if (file.size > 60 * 1024 * 1024) {
+      alert('原始文件過大。請上傳小於 60MB 的音頻文件。\n(我們會協助壓縮，但原始檔太大會導致瀏覽器崩潰)');
+      return;
+    }
+
+    // 獲取 API Key
     const apiKey = CONFIG.API_KEY || localStorage.getItem('GEMINI_API_KEY');
     if (!apiKey) {
-      alert("請先輸入 Gemini API Key");
+      alert('請先輸入 Gemini API Key');
+      setStep('upload');
       return;
     }
 
     setStep('processing');
+    setProcessingMessage('準備處理音頻...');
     setProcessingProgress(0);
-    setProcessingMessage('正在準備分析...');
 
     try {
       console.log('開始處理音頻文件:', file.name);
@@ -122,8 +145,15 @@ export default function App() {
       // 階段 2: 壓縮 (10-30%)
       if (shouldCompressAudio(file)) {
         console.log('文件超過 5MB,開始壓縮...');
-        setProcessingProgress(15);
         setProcessingMessage(`正在壓縮音頻 (${(file.size / 1024 / 1024).toFixed(2)} MB)...`);
+        setProcessingProgress(15);
+
+        // 檢查 lamejs 是否加載
+        if (!(window as any).lamejs) {
+          console.warn('lamejs not loaded');
+          setProcessingMessage('壓縮元件未加載，將嘗試使用原始文件...');
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
 
         try {
           // 壓縮音頻到 16kHz
@@ -154,18 +184,26 @@ export default function App() {
         } catch (compressionError: any) {
           console.error('壓縮失敗,使用原始文件:', compressionError);
           setProcessingProgress(30);
-          setProcessingMessage('壓縮失敗,使用原始文件繼續分析...');
+          setProcessingMessage('壓縮失敗 (可能是網路阻擋元件載入), 將使用原始文件繼續分析...');
           // 如果壓縮失敗,繼續使用原始文件
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       } else {
         console.log('文件小於 5MB,跳過壓縮');
+        setProcessingMessage('文件小於 5MB，跳過壓縮步驟...');
         setProcessingProgress(30);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // 最終檢查：壓縮後是否小於 20MB (Gemini API 限制)
+      if (processedFile.size > 20 * 1024 * 1024) {
+        throw new Error(`壓縮後文件仍過大 (${(processedFile.size / 1024 / 1024).toFixed(2)} MB)。\nGemini API 限制單次上傳最大 20MB。\n請嘗試使用較短的錄音或更低畫質的錄音檔。`);
       }
 
       // 階段 3: AI 分析 (30-90%)
       setProcessingProgress(35);
+      setProcessingMessage('AI 正在聆聽並分析會議內容...\n這可能需要 1-2 分鐘，請耐心等待');
+
       const result = await analyzeAudio(apiKey, processedFile, (message) => {
         console.log('進度更新:', message);
         setProcessingMessage(message);
@@ -189,16 +227,26 @@ export default function App() {
       setProcessingMessage('正在整理結果...');
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      setProcessingProgress(95);
-      setFormData(prev => ({ ...prev, ...result.formData }));
-      setSummary(result.summary);
-      setTranscript(result.transcript);
+      if (result) {
+        setProcessingProgress(95);
+        setFormData(prev => ({ ...prev, ...result.formData }));
+        setSummary(result.summary);
+        setTranscript(result.transcript);
 
-      setProcessingProgress(100);
-      setProcessingMessage('分析完成!');
-      await new Promise(resolve => setTimeout(resolve, 500));
+        // 更新 Token 使用量和模型名稱
+        if (result.tokenUsage) {
+          setCurrentUsage(result.tokenUsage);
+        }
+        if (result.modelName) {
+          setCurrentModelName(result.modelName);
+        }
 
-      setStep('workspace');
+        setProcessingProgress(100);
+        setProcessingMessage('分析完成!');
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        setStep('workspace');
+      }
     } catch (error: any) {
       console.error('處理錯誤:', error);
       alert(`處理音檔時發生錯誤:\n\n${error.message || '請重試'}\n\n請檢查:\n1. API Key 是否正確\n2. 網路連線是否正常\n3. 音頻文件是否完整\n\n詳細錯誤請查看瀏覽器控制台 (F12)`);
@@ -336,6 +384,11 @@ export default function App() {
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto py-8 sm:px-6 lg:px-8 print:p-0 print:max-w-none">
+
+        {/* Token Usage Display */}
+        <div className="mb-6 print:hidden">
+          <TokenUsageDisplay currentUsage={currentUsage} modelName={currentModelName} />
+        </div>
 
         {/* Form Tab */}
         <div className={`${activeTab === 'form' ? 'block' : 'hidden'} overflow-y-auto max-h-[calc(100vh-8rem)] print:block`}>

@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { BniFormData } from "../types";
+import { BniFormData, TokenUsage } from "../types";
+import { calculateCost, recordTokenUsage } from "./tokenTracker";
 
 // Helper to convert file to base64
 export const fileToGenerativePart = async (file: File) => {
@@ -41,7 +42,7 @@ export const analyzeAudio = async (
   apiKey: string,
   audioFile: File,
   onProgress?: (message: string) => void
-): Promise<{ formData: BniFormData, summary: string, transcript: string }> => {
+): Promise<{ formData: BniFormData, summary: string, transcript: string, tokenUsage?: TokenUsage, modelName: string }> => {
   console.log('[analyzeAudio] 開始分析音頻');
   console.log('[analyzeAudio] 文件名稱:', audioFile.name);
   console.log('[analyzeAudio] 文件大小:', (audioFile.size / 1024 / 1024).toFixed(2), 'MB');
@@ -93,6 +94,7 @@ export const analyzeAudio = async (
 - 回答時不要使用主語(不要用「我」、「我的」等第一人稱),直接陳述內容,語氣自然流暢
 - 不要使用「申請人說」、「申請人表示」等第三人稱描述
 - 如果資訊未明確提及,直接留空(空字串 ""),不要寫「未明確提及」、「未提到」等字樣
+- 例外:對於「訪談委員意見」和「引薦人意見」,如果不確定或未提及,請填入「(錄音中未提及,請訪談委員自行補充)」,切勿留空。
 - 對於問題 5(出席規定說明)和問題 19(費用說明),要記錄申請人對規則的理解和確認,同樣不使用主語
 - 如果申請人提到具體數字、時間、地點、例子等,務必完整記錄
 - 回答要使用繁體中文
@@ -171,7 +173,36 @@ export const analyzeAudio = async (
 
     const result = JSON.parse(text);
     console.log('[analyzeAudio] 分析完成');
-    return result;
+
+    // 提取 token 使用量
+    const usageMetadata = response.usageMetadata;
+    const inputTokens = usageMetadata?.promptTokenCount || 0;
+    const outputTokens = usageMetadata?.candidatesTokenCount || 0;
+    const totalTokens = usageMetadata?.totalTokenCount || inputTokens + outputTokens;
+
+    // 計算費用
+    const { costUSD, costNTD } = calculateCost(inputTokens, outputTokens);
+
+    // 建立 token 使用記錄
+    const tokenUsage: TokenUsage = {
+      inputTokens,
+      outputTokens,
+      totalTokens,
+      costUSD,
+      costNTD,
+      timestamp: Date.now(),
+    };
+
+    // 記錄到歷史
+    recordTokenUsage(tokenUsage);
+
+    console.log(`[analyzeAudio] Token usage: ${inputTokens} input + ${outputTokens} output = ${totalTokens} total (NT$${costNTD.toFixed(2)})`);
+
+    return {
+      ...result,
+      tokenUsage,
+      modelName: model,
+    };
 
   } catch (error: any) {
     console.error('[analyzeAudio] 錯誤:', error);

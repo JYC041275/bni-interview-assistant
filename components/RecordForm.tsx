@@ -28,25 +28,18 @@ const QuestionBlock = ({
     <div className="flex gap-2 ml-6">
       <span className="font-bold text-red-700 shrink-0">回覆{typeof num === 'number' ? '' : ` ${num}`}：</span>
       <textarea
-        className="w-full p-2 border border-gray-300 rounded bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 outline-none text-gray-800 resize-none overflow-hidden"
-        style={{ minHeight: '3rem', maxHeight: 'none' }}
+        className="w-full p-2 border border-gray-300 rounded bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 outline-none text-gray-800 resize-y overflow-hidden"
+        style={{ minHeight: '5rem' }}
         value={value}
-        rows={1}
         onChange={(e) => {
           onChange(e.target.value);
-          // 自動調整高度
           e.target.style.height = 'auto';
-          e.target.style.height = Math.max(48, e.target.scrollHeight) + 'px';
+          e.target.style.height = e.target.scrollHeight + 'px';
         }}
         onInput={(e) => {
           const target = e.target as HTMLTextAreaElement;
           target.style.height = 'auto';
-          target.style.height = Math.max(48, target.scrollHeight) + 'px';
-        }}
-        onFocus={(e) => {
-          // 聚焦時也調整高度
-          e.target.style.height = 'auto';
-          e.target.style.height = Math.max(48, e.target.scrollHeight) + 'px';
+          target.style.height = target.scrollHeight + 'px';
         }}
       />
     </div>
@@ -59,7 +52,7 @@ const SectionHeader = ({ title }: { title: string }) => (
 
 export const RecordForm: React.FC<Props> = ({ data, onChange }) => {
   return (
-    <div className="max-w-4xl mx-auto bg-white p-8 shadow-lg min-h-screen print:shadow-none print:max-w-none print:w-full print:p-0 print:min-h-0" id="bni-form-print">
+    <div className="max-w-4xl mx-auto bg-white p-8 pb-24 shadow-lg min-h-screen print:shadow-none print:max-w-none print:w-full print:p-0 print:pb-12 print:min-h-0" id="bni-form-print">
       {/* Header */}
       <div className="mb-8 border-b-2 border-black pb-4">
         <h1 className="text-2xl font-bold text-center mb-2">BNI 台北市北區長安分會申請入會訪談</h1>

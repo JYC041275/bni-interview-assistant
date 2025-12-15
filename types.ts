@@ -52,10 +52,20 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  costUSD: number;
+  costNTD: number;
+  timestamp: number;
+}
+
 export interface AnalysisResult {
   summary: string;
   transcript: string; // With speaker labels
   formData: BniFormData;
+  tokenUsage?: TokenUsage; // Optional for backward compatibility
 }
 
 export type AIModel = 'gemini' | 'deepseek';
