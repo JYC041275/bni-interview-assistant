@@ -396,7 +396,7 @@ export default function App() {
         </div>
 
         {/* Transcript Tab */}
-        <div className={`${activeTab === 'transcript' ? 'block' : 'hidden'} print:hidden bg-white shadow rounded-lg p-8`}>
+        <div className={`${activeTab === 'transcript' ? 'block' : 'hidden'} print:hidden bg-white shadow rounded-lg p-8 mb-8`}>
           <div className="mb-8">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
               <span className="w-1 h-6 bg-red-600 rounded-full mr-2"></span>
