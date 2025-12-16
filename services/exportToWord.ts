@@ -18,7 +18,7 @@ export const exportToWord = async (formData: BniFormData, summary: string, trans
         new Paragraph({
             children: [
                 new TextRun({
-                    text: "BNI 台北市北區長安分會申請入會訪談",
+                    text: "BNI 台北市北區長安分會申請入會訪談（20241002 修訂）",
                     size: 36, // 18pt
                     color: "FF0000", // Red
                     bold: true,
@@ -132,6 +132,17 @@ export const exportToWord = async (formData: BniFormData, summary: string, trans
 
         new Paragraph({
             children: [
+                new TextRun({ text: "陪訪夥伴的意見：", bold: true })
+            ],
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            text: formData.accompaniedInterviewerOpinion,
+            spacing: { after: 200 }
+        }),
+
+        new Paragraph({
+            children: [
                 new TextRun({ text: "引薦人的意見：", bold: true })
             ],
             spacing: { after: 100 }
@@ -168,11 +179,11 @@ export const exportToWord = async (formData: BniFormData, summary: string, trans
         ...createQuestionParagraphs(2, "您認為自己能為 BNI 及長安分會帶來什麼優勢？", formData.q2_advantage),
         ...createQuestionParagraphs(3, "您期待在 BNI 及長安分會得到什麼？", formData.q3_expectation),
         ...createQuestionParagraphs(4, "每週四早上 6:30 的會議會不會影響您的行程？每週 120 分鐘的會議你能全程參與嗎？", formData.q4_attendance_commitment),
-        ...createQuestionParagraphs(5, "BNI 有非常明確的出席規定。", formData.q5_attendance_rules_check),
+        ...createQuestionParagraphs(5, "BNI 有非常明確的出席規定。現在我想跟您說明清楚，讓您更瞭解規定。在每 6 個月的滾動會期中，最多只能缺席 3 次。如果缺席 4 次就必須離開分會。如果有代理人出席就不算缺席。代理人不一定要和你同行業，他可以是任何願意代為出席幫你簡報的人。代理人在每 6 個月內最多只能使用 3 次。關於出席規定有什麼疑問嗎？", formData.q5_attendance_rules_check),
         ...createQuestionParagraphs(6, "如果無法親自出席，您找的到代理人嗎？", formData.q6_substitute_availability),
-        ...createQuestionParagraphs(7, "入會當天，分會需要你至少邀請一位來賓參加例會，見證你的入會宣誓。你是否願意有承諾的邀請至少一位來賓?", formData.q7_invite_guest),
+        ...createQuestionParagraphs(7, "入會當天對於你跟分會都是至關重要的時刻，你可以邀請你的代理人、長年合作的合夥人、上下游廠商擔任來賓，一同參加例會，建議兩位（至少一位，另外一位可以彈性在入會後的三十天之內補上），一起見證你的入會宣誓。", formData.q7_invite_guest),
         ...createQuestionParagraphs(8, "每一年分會都會有一些特別活動來增加引薦數量（例如 BOD 來賓日），您願意邀請能受益的人來嗎？", formData.q8_special_events),
-        ...createQuestionParagraphs(9, "在審核過程中，我們想確定您在我們分會申請的代表產業別是？您提供哪些產品或服務？主要產品、服務是什麼？", formData.q9_business_verification),
+        ...createQuestionParagraphs(9, "在審核過程中，我們想確定您在我們分會申請的代表產業別是？您提供哪些產品或服務？主要產品、服務是什麼？（若有多項，請委員務必追問營業額的比例）", formData.q9_business_verification),
         ...createQuestionParagraphs(10, "什麼機緣開始接觸這個領域？從事這個領域有多久？是否有別的事業同時進行中？", formData.q10_industry_background),
         ...createQuestionParagraphs(11, "您主要客戶來源和背景是什麼？", formData.q11_client_source),
         ...createQuestionParagraphs(12, "您是否有團隊？", formData.q12_team_status),
@@ -217,7 +228,7 @@ export const exportToWord = async (formData: BniFormData, summary: string, trans
                                 })
                             ],
                             spacing: { after: 200 }
-                        })
+                        }),
                     ];
                 } catch (error) {
                     console.error(`處理照片 ${index + 1} 時發生錯誤:`, error);
@@ -226,6 +237,83 @@ export const exportToWord = async (formData: BniFormData, summary: string, trans
             })
         ] : [])
     ];
+
+    // Add Reference Information Appendix (from PDF page 4)
+    children.push(
+        new Paragraph({
+            children: [
+                new TextRun({ text: "參考資訊", bold: true, size: 28 })
+            ],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400, after: 200 }
+        }),
+
+        // BNI 會員成功五項關鍵承諾
+        new Paragraph({
+            children: [
+                new TextRun({ text: "• BNI 會員成功五項關鍵承諾：", bold: true })
+            ],
+            spacing: { before: 200, after: 100 }
+        }),
+        new Paragraph({
+            text: "1. 出席、2. 主題簡報、3. 一對一、4. 帶來賓、5. 培訓）。執事有充份表達、申請人也完全了解規則，確認有闡述並了解。",
+            spacing: { after: 200 }
+        }),
+
+        // 審核速度說明
+        new Paragraph({
+            children: [
+                new TextRun({ text: "• 請務必告知申請人：", bold: true })
+            ],
+            spacing: { before: 200, after: 100 }
+        }),
+        new Paragraph({
+            text: "長安會員委員會目前審核的速度，約為訪談後 7-10 天完成。",
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({ text: "1. ", bold: true }),
+                new TextRun("若收到「審核通過」的通知，請在收到通知的三天內完成繳費，長安的秘書財務將會協助刷卡或匯款；如未如期完成繳費，將視同撤回審核通過，將開放給相同專業類別的其他來賓申請入會。")
+            ],
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({ text: "2. ", bold: true }),
+                new TextRun("繳費完成後的兩週內，亦須完成報到宣誓手續。如無正當理由完成宣誓報到，分會得開出信用證，請申請人最快於六個月後，才能再重新申請入會。（信用證於兩年內必須啟用）")
+            ],
+            spacing: { after: 200 }
+        }),
+
+        // 副主席給委員的溫馨提醒
+        new Paragraph({
+            children: [
+                new TextRun({ text: "副主席給委員的溫馨提醒：", bold: true })
+            ],
+            spacing: { before: 200, after: 100 }
+        }),
+        new Paragraph({
+            text: "1. 盡量約訪在對方辦公室並拍攝照片，將是值得參考的資料。",
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            text: "2. 抱著好奇、感興趣的態度，而非詰問的態度來做訪談，是對申請人基本的尊重。",
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            text: "3. 做委員的好處是能多結識一位申請人。",
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            text: "4. 請不要隨意承諾會申請通過或是不會通過。",
+            spacing: { after: 100 }
+        }),
+        new Paragraph({
+            text: "5. 會員的訪談角度中立，切勿因為申請人的審核通過與否而產生負面情緒。",
+            spacing: { after: 200 }
+        })
+    );
 
     // Create document with children
     const doc = new Document({

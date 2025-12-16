@@ -85,6 +85,10 @@ export const RecordForm: React.FC<Props> = ({ data, onChange }) => {
             <textarea className="w-full border-b border-gray-300 focus:border-red-500 outline-none resize-none" rows={2} value={data.interviewerOpinion} onChange={e => onChange('interviewerOpinion', e.target.value)} />
           </div>
           <div>
+            <label className="font-bold block">陪訪夥伴的意見：</label>
+            <textarea className="w-full border-b border-gray-300 focus:border-red-500 outline-none resize-none" rows={2} value={data.accompaniedInterviewerOpinion} onChange={e => onChange('accompaniedInterviewerOpinion', e.target.value)} />
+          </div>
+          <div>
             <label className="font-bold block">引薦人的意見：</label>
             <textarea className="w-full border-b border-gray-300 focus:border-red-500 outline-none resize-none" rows={2} value={data.introducerOpinion} onChange={e => onChange('introducerOpinion', e.target.value)} />
           </div>
@@ -140,7 +144,7 @@ export const RecordForm: React.FC<Props> = ({ data, onChange }) => {
 
       <QuestionBlock
         num={7}
-        question="入會當天，分會需要你至少邀請一位來賓參加例會，見證你的入會宣誓。你是否願意有承諾的邀請至少一位來賓? (可以是你的配偶 重要合夥人及代理人)"
+        question="入會當天對於你跟分會都是至關重要的時刻，你可以邀請你的代理人、長年合作的合夥人、上下游廠商擔任來賓，一同參加例會，建議兩位（至少一位，另外一位可以彈性在入會後的三十天之內補上），一起見證你的入會宣誓。"
         value={data.q7_invite_guest}
         onChange={(v) => onChange('q7_invite_guest', v)}
       />

@@ -80,7 +80,7 @@ export const analyzeAudio = async (
 1. 提取所有表單欄位資訊(BniFormData):
    - 表頭資訊:申請日期、引薦人、申請人姓名、公司名稱、統編、職稱、訪談時間、地點、專業類別、訪談委員
    - 23 個訪談問題的詳細回答:每個回答必須詳細完整,包含申請人的具體說明、例子、原因等,不要只寫簡短摘要
-   - 其他資訊:網路搜尋資訊、訪談委員意見、引薦人意見
+   - 其他資訊:網路搜尋資訊、訪談委員意見、陪訪夥伴的意見、引薦人意見
 
 2. 生成會議摘要(summary):
    - 200-300 字的重點摘要,包含訪談的主要內容和結論
@@ -94,7 +94,7 @@ export const analyzeAudio = async (
 - 回答時不要使用主語(不要用「我」、「我的」等第一人稱),直接陳述內容,語氣自然流暢
 - 不要使用「申請人說」、「申請人表示」等第三人稱描述
 - 如果資訊未明確提及,直接留空(空字串 ""),不要寫「未明確提及」、「未提到」等字樣
-- 例外:對於「訪談委員意見」和「引薦人意見」,如果不確定或未提及,請填入「(錄音中未提及,請訪談委員自行補充)」,切勿留空。
+- 例外:對於「訪談委員意見」、「陪訪夥伴的意見」和「引薦人意見」,如果不確定或未提及,請填入「(錄音中未提及,請訪談委員自行補充)」,切勿留空。
 - 對於問題 5(出席規定說明)和問題 19(費用說明),要記錄申請人對規則的理解和確認,同樣不使用主語
 - 如果申請人提到具體數字、時間、地點、例子等,務必完整記錄
 - 回答要使用繁體中文
@@ -123,6 +123,7 @@ export const analyzeAudio = async (
                 interviewer: { type: Type.STRING },
                 webSearchInfo: { type: Type.STRING },
                 interviewerOpinion: { type: Type.STRING },
+                accompaniedInterviewerOpinion: { type: Type.STRING },
                 introducerOpinion: { type: Type.STRING },
                 q1_motivation: { type: Type.STRING },
                 q2_advantage: { type: Type.STRING },

@@ -14,6 +14,7 @@ export interface BniFormData {
   // Preliminary
   webSearchInfo: string;
   interviewerOpinion: string;
+  accompaniedInterviewerOpinion: string; // 陪訪夥伴的意見
   introducerOpinion: string;
 
   // Questions 1-23 (Mapping to the keys in the PDF)
@@ -83,6 +84,7 @@ export const INITIAL_FORM_DATA: BniFormData = {
   interviewer: "",
   webSearchInfo: "",
   interviewerOpinion: "",
+  accompaniedInterviewerOpinion: "",
   introducerOpinion: "",
   q1_motivation: "",
   q2_advantage: "",
