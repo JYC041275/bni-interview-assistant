@@ -409,12 +409,12 @@ export default function App() {
 
           <hr className="my-8 border-gray-100" />
 
-          <div>
+          <div className="mb-8">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
               <span className="w-1 h-6 bg-gray-600 rounded-full mr-2"></span>
               詳細逐字稿
             </h3>
-            <div className="font-mono text-sm text-gray-600 bg-gray-50 p-6 rounded-xl border border-gray-200 whitespace-pre-wrap leading-relaxed h-[600px] overflow-y-auto">
+            <div className="font-mono text-sm text-gray-600 bg-gray-50 p-6 rounded-xl border border-gray-200 whitespace-pre-wrap leading-relaxed">
               {transcript || "尚無逐字稿資料"}
             </div>
           </div>
