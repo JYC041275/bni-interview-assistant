@@ -391,12 +391,12 @@ export default function App() {
         </div>
 
         {/* Form Tab */}
-        <div className={`${activeTab === 'form' ? 'block' : 'hidden'} overflow-y-auto max-h-[calc(100vh-8rem)] print:block`}>
+        <div className={`${activeTab === 'form' ? 'block' : 'hidden'} print:block`}>
           <RecordForm data={formData} onChange={handleFormChange} />
         </div>
 
         {/* Transcript Tab */}
-        <div className={`${activeTab === 'transcript' ? 'block' : 'hidden'} print:hidden bg-white shadow rounded-lg p-8 min-h-[500px]`}>
+        <div className={`${activeTab === 'transcript' ? 'block' : 'hidden'} print:hidden bg-white shadow rounded-lg p-8`}>
           <div className="mb-8">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
               <span className="w-1 h-6 bg-red-600 rounded-full mr-2"></span>
@@ -414,7 +414,7 @@ export default function App() {
               <span className="w-1 h-6 bg-gray-600 rounded-full mr-2"></span>
               詳細逐字稿
             </h3>
-            <div className="font-mono text-sm text-gray-600 bg-gray-50 p-6 rounded-xl border border-gray-200 whitespace-pre-wrap leading-relaxed h-[600px] overflow-y-auto">
+            <div className="font-mono text-sm text-gray-600 bg-gray-50 p-6 rounded-xl border border-gray-200 whitespace-pre-wrap leading-relaxed max-h-[600px] overflow-y-auto">
               {transcript || "尚無逐字稿資料"}
             </div>
           </div>
